@@ -26,7 +26,7 @@ export default class BrowserConfig {
                 const config_file = join(config_dir, 'browser-config.json');
                 const content = readFileSync(config_file, 'utf8');
                 this.loaded_config = JSON.parse(content);
-            } catch (e) {
+            } catch {
                 // Do nothing
             }
             resolve();

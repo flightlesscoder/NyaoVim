@@ -31,7 +31,7 @@ class ComponentLoader {
                 }
             }
             this.nyaovim_plugin_paths.push(dir);
-        } catch (err) {
+        } catch {
             // 'nyaovim-plugin' doesn't exist
         }
     }
@@ -107,9 +107,8 @@ const runtime_api = new RuntimeApi({
             return;
         }
         try {
-            /* tslint:disable */
+            // eslint-disable-next-line no-eval
             eval(code);
-            /* tslint:enable */
         } catch (e) {
             console.error('While executing javascript:', e, ' Code:', code);
         }
@@ -249,8 +248,8 @@ class NyaoVimApp extends Polymer.Element {
                     const a = process.env.NYAOVIM_E2E_TEST_RUNNING ? [] : remote.process.argv.slice(electron_argc);
 
                     a.unshift(
-                        '--cmd', `let\ g:nyaovim_version="${remote.app.getVersion()}"`,
-                        '--cmd', `set\ rtp+=${join(__dirname, '..', 'runtime').replace(' ', '\ ')}`,
+                        '--cmd', `let\\ g:nyaovim_version="${remote.app.getVersion()}"`,
+                        '--cmd', `set\\ rtp+=${join(__dirname, '..', 'runtime').replace(' ', '\\ ')}`,
                     );
 
                     // XXX:
