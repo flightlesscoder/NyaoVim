@@ -1,5 +1,4 @@
 import {NeovimElement, Neovim} from 'neovim-component';
-import {remote, shell, ipcRenderer as ipc} from 'electron';
 import {join, basename} from 'path';
 import {readdirSync} from 'fs';
 import {Nvim, RPCValue} from 'promised-neovim-client';
@@ -76,7 +75,7 @@ class RuntimeApi {
 }
 
 const component_loader = new ComponentLoader();
-const ThisBrowserWindow = remote.getCurrentWindow();
+const bridge = window.nyaovimBridge;
 const runtime_api = new RuntimeApi({
     'nyaovim:load-path': (html_path: string) => {
         component_loader.loadComponent(html_path);
@@ -85,8 +84,8 @@ const runtime_api = new RuntimeApi({
         component_loader.loadPluginDir(dir_path);
     },
     'nyaovim:edit-start': (file_path: string) => {
-        ThisBrowserWindow.setRepresentedFilename(file_path);
-        remote.app.addRecentDocument(file_path);
+        bridge.setRepresentedFilename(file_path);
+        bridge.addRecentDocument(file_path);
     },
     'nyaovim:require-script-file': (script_path: string) => {
         require(script_path);
@@ -98,8 +97,7 @@ const runtime_api = new RuntimeApi({
         }
     },
     'nyaovim:open-devtools': (mode: 'right' | 'bottom' | 'undocked' | 'detach') => {
-        const contents = remote.getCurrentWebContents();
-        contents.openDevTools({mode});
+        bridge.openDevTools(mode);
     },
     'nyaovim:execute-javascript': (code: string) => {
         if (typeof code !== 'string') {
@@ -115,7 +113,7 @@ const runtime_api = new RuntimeApi({
     },
     'nyaovim:browser-window': (method: string, args: RPCValue[]) => {
         try {
-            (ThisBrowserWindow as any)[method].apply(ThisBrowserWindow, args);
+            bridge.invokeBrowserWindowMethod(method, args);
         } catch (e) {
             console.error("Error while executing 'nyaovim:browser-window':", e, ' Method:', method, ' Args:', args);
         }
@@ -123,13 +121,13 @@ const runtime_api = new RuntimeApi({
 });
 
 function prepareIpc(client: Nvim) {
-    ipc.on('nyaovim:exec-commands', (_: any, cmds: string[]) => {
+    bridge.onExecCommands((cmds: string[]) => {
         for (const c of cmds) {
             client.command(c);
         }
     });
 
-    ipc.on('nyaovim:copy', () => {
+    bridge.onCopy(() => {
         // get current vim mode
         client.eval('mode()').then((value: any): void => {
             if (value.length === 0) {
@@ -146,7 +144,7 @@ function prepareIpc(client: Nvim) {
         });
     });
 
-    ipc.on('nyaovim:select-all', () => {
+    bridge.onSelectAll(() => {
         // get current vim mode.
         client.eval('mode()').then((value: any): void => {
             if (value.length === 0) {
@@ -158,7 +156,7 @@ function prepareIpc(client: Nvim) {
         });
     });
 
-    ipc.on('nyaovim:cut', () => {
+    bridge.onCut(() => {
         // get current vim mode
         client.eval('mode()').then((value: any): void => {
             if (value.length === 0) {
@@ -176,7 +174,7 @@ function prepareIpc(client: Nvim) {
         });
     });
 
-    ipc.on('nyaovim:paste', () => {
+    bridge.onPaste(() => {
         // get current vim mode
         client.eval('mode()').then((value: any): void => {
             if (value.length === 0) {
@@ -232,8 +230,10 @@ class NyaoVimApp extends Polymer.Element {
                     // The first argument of standalone distribution is the binary path
                     let electron_argc =  1;
 
+                    const mainArgv = bridge.getArgv();
+
                     // When application is executed via 'electron' ('Electron' on darwin) executable.
-                    if ('electron' === basename(remote.process.argv[0]).toLowerCase()) {
+                    if ('electron' === basename(mainArgv[0]).toLowerCase()) {
                         // Note:
                         // The first argument is a path to Electron executable.
                         // The second argument is the path to main.js
@@ -245,10 +245,10 @@ class NyaoVimApp extends Polymer.Element {
                     // XXX:
                     // Spectron additionally passes many specific arguments to process and 'nvim' process
                     // will fail because of them.  As a workaround, we stupidly ignore arguments on E2E tests.
-                    const a = process.env.NYAOVIM_E2E_TEST_RUNNING ? [] : remote.process.argv.slice(electron_argc);
+                    const a = process.env.NYAOVIM_E2E_TEST_RUNNING ? [] : mainArgv.slice(electron_argc);
 
                     a.unshift(
-                        '--cmd', `let\\ g:nyaovim_version="${remote.app.getVersion()}"`,
+                        '--cmd', `let\\ g:nyaovim_version="${bridge.getVersion()}"`,
                         '--cmd', `set\\ rtp+=${join(__dirname, '..', 'runtime').replace(' ', '\\ ')}`,
                     );
 
@@ -272,10 +272,10 @@ class NyaoVimApp extends Polymer.Element {
         const element = this.$['nyaovim-editor'] as NeovimElement;
         const editor = element.editor;
         editor.on('error', (err: Error) => alert(err.message));
-        editor.on('quit', () => ThisBrowserWindow.close());
+        editor.on('quit', () => bridge.windowClose());
         this.editor = editor;
 
-        editor.store.on('beep', () => shell.beep());
+        editor.store.on('beep', () => bridge.beep());
         editor.store.on('title-changed', () => {
             document.title = editor.store.title;
         });
@@ -299,8 +299,7 @@ class NyaoVimApp extends Polymer.Element {
                 }
             });
 
-            remote.app.on('open-file', (e: Event, p: string) => {
-                e.preventDefault();
+            bridge.onOpenFile((p: string) => {
                 client.command('edit! ' + p);
             });
 

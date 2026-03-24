@@ -18,6 +18,7 @@
   "files": [
     "nyaovim-app.ts",
     "main.ts",
-    "lib.d.ts"
+    "lib.d.ts",
+    "preload.d.ts"
   ]
 }

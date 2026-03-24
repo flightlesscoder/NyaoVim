@@ -20,6 +20,7 @@
     "browser-config.ts",
     "menu.ts",
     "main.ts",
+    "preload.ts",
     "lib.d.ts"
   ]
 }

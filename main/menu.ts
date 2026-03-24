@@ -18,7 +18,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                     label: 'Undo',
                     accelerator: 'CmdOrCtrl+Z',
                     click: () => {
-                        if ((win.webContents as any).isFocused()) {
+                        if (win.isFocused()) {
                             // send the command to the nyaovim-app
                             win.webContents.send('nyaovim:exec-commands', ['undo']);
                         } else {
@@ -31,7 +31,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                     label: 'Redo',
                     accelerator: 'Shift+CmdOrCtrl+Z',
                     click: () => {
-                        if ((win.webContents as any).isFocused()) {
+                        if (win.isFocused()) {
                             // send the command to the nyaovim-app
                             win.webContents.send('nyaovim:exec-commands', ['redo']);
                         } else {
@@ -47,7 +47,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                     label: 'Cut',
                     accelerator: 'CmdOrCtrl+X',
                     click: () => {
-                        if ((win.webContents as any).isFocused()) {
+                        if (win.isFocused()) {
                             // send the command to the nyaovim-app
                             win.webContents.send('nyaovim:cut');
                         } else {
@@ -60,7 +60,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                     label: 'Copy',
                     accelerator: 'CmdOrCtrl+C',
                     click: () => {
-                        if ((win.webContents as any).isFocused()) {
+                        if (win.isFocused()) {
                             // send the command to the nyaovim-app
                             win.webContents.send('nyaovim:copy');
                         } else {
@@ -73,7 +73,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                     label: 'Paste',
                     accelerator: 'CmdOrCtrl+V',
                     click: () => {
-                        if ((win.webContents as any).isFocused()) {
+                        if (win.isFocused()) {
                             // send the command to the nyaovim-app
                             win.webContents.send('nyaovim:paste');
                         } else {
@@ -86,7 +86,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                     label: 'Select All',
                     accelerator: 'CmdOrCtrl+A',
                     click: () => {
-                        if ((win.webContents as any).isFocused()) {
+                        if (win.isFocused()) {
                             // send the command to the nyaovim-app
                             win.webContents.send('nyaovim:select-all');
                         } else {

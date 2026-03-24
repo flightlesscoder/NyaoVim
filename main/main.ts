@@ -1,6 +1,6 @@
 import {join} from 'path';
 import {stat, writeFileSync} from 'fs';
-import {app, BrowserWindow, shell, nativeImage} from 'electron';
+import {app, BrowserWindow, shell, nativeImage, ipcMain} from 'electron';
 import {sync as mkdirpSync} from 'mkdirp';
 import setMenu from './menu';
 import BrowserConfig from './browser-config';
@@ -101,6 +101,9 @@ function startMainWindow() {
         useContentSize: true,
         webPreferences: {
             blinkFeatures: 'KeyboardEventKey,Accelerated2dCanvas,Canvas2dFixedRenderingMode',
+            preload: join(__dirname, 'preload.js'),
+            contextIsolation: true,
+            nodeIntegration: true,
         },
         icon: nativeImage.createFromPath(join(__dirname, '..', 'resources', 'icon', 'nyaovim-logo.png')),
     } as Electron.BrowserWindowConstructorOptions;
@@ -132,6 +135,32 @@ function startMainWindow() {
     return win;
 }
 
+// IPC handlers for the renderer bridge (preload.ts)
+ipcMain.on('get-nyaovimrc-path', (event: Electron.IpcMainEvent) => { event.returnValue = global.nyaovimrc_path; });
+ipcMain.on('get-version', (event: Electron.IpcMainEvent) => { event.returnValue = app.getVersion(); });
+ipcMain.on('get-argv', (event: Electron.IpcMainEvent) => { event.returnValue = process.argv; });
+ipcMain.on('add-recent-document', (_event: Electron.IpcMainEvent, path: string) => { app.addRecentDocument(path); });
+ipcMain.on('shell-beep', () => { shell.beep(); });
+ipcMain.on('window-set-represented-filename', (event: Electron.IpcMainEvent, path: string) => {
+    BrowserWindow.fromWebContents(event.sender)?.setRepresentedFilename(path);
+});
+ipcMain.on('window-close', (event: Electron.IpcMainEvent) => {
+    BrowserWindow.fromWebContents(event.sender)?.close();
+});
+ipcMain.on('window-open-devtools', (event: Electron.IpcMainEvent, mode: string) => {
+    (event.sender as any).openDevTools({mode});
+});
+ipcMain.on('browser-window-method', (event: Electron.IpcMainEvent, method: string, args: unknown[]) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) { return; }
+    const ALLOWED_METHODS = ['setTitle', 'setProgressBar', 'flashFrame', 'setFullScreen', 'minimize', 'maximize', 'focus', 'restore'];
+    if (!ALLOWED_METHODS.includes(method)) {
+        console.error(`browser-window-method: blocked method '${method}'`);
+        return;
+    }
+    (win as any)[method](...(args as unknown[]));
+});
+
 app.once('window-all-closed', () => app.quit());
 app.on('open-url', (e: Event, u: string) => {
     e.preventDefault();
@@ -146,6 +175,8 @@ app.once('will-finish-launching', function() {
         e.preventDefault();
     });
 });
+
+let mainWindow: Electron.BrowserWindow | null = null;
 
 app.once(
     'ready',
@@ -162,7 +193,13 @@ app.once(
         ]).then(() => {
             const w = startMainWindow();
             if (w !== null) {
+                mainWindow = w;
                 setMenu(w);
+                // Forward macOS open-file events to the renderer via IPC
+                app.on('open-file', (e: Event, p: string) => {
+                    e.preventDefault();
+                    mainWindow?.webContents.send('open-file', p);
+                });
             }
         });
     },

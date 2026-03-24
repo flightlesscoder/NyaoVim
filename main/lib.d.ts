@@ -16,4 +16,21 @@ declare global {
     }
 }
 
+// Forward-compat declarations for Electron APIs added after v1.x.
+// These are used in preload.ts (contextBridge) and IPC handlers (IpcMainEvent).
+declare module 'electron' {
+    // contextBridge was added in Electron 5 (not present in 1.x types)
+    interface ContextBridge {
+        exposeInMainWorld(apiKey: string, api: Record<string, unknown>): void;
+    }
+    const contextBridge: ContextBridge;
+
+    // IpcMainEvent type (may not exist in old Electron 1.x types)
+    interface IpcMainEvent extends Event {
+        returnValue: unknown;
+        sender: Electron.WebContents;
+        reply(...args: unknown[]): void;
+    }
+}
+
 export {};
