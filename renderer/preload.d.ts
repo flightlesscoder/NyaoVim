@@ -1,3 +1,6 @@
+// Type declarations for the contextBridge API exposed by main/preload.ts.
+// Since this is a script file (no imports), all declarations are global.
+
 interface NyaovimBridge {
     // Config / app info
     getNyaovimrcPath(): string;
@@ -27,8 +30,7 @@ interface NyaovimBridge {
     onOpenFile(callback: (filePath: string) => void): void;
 }
 
-declare global {
-    interface Window {
-        nyaovimBridge: NyaovimBridge;
-    }
+// Augment the global Window interface so window.nyaovimBridge is typed.
+interface Window {
+    nyaovimBridge: NyaovimBridge;
 }

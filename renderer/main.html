@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes" />
     <title>NyaoVim</title>
 
-    <link rel="import" href="../bower_components/polymer/polymer.html" />
-    <link rel="import" href="../node_modules/neovim-component/neovim-editor.html" />
+    <!-- neovim-component defines <neovim-editor>; loaded via script tag from npm -->
+    <script src="../node_modules/neovim-component/neovim-editor.html" type="module"></script>
     <script>const exports = {};</script>
     <script src="./main.js"></script>
     <script src="./nyaovim-app.js"></script>

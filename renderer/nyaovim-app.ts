@@ -1,3 +1,5 @@
+import {LitElement, html, css} from 'lit';
+import {customElement, property} from 'lit/decorators.js';
 import {NeovimElement, Neovim} from 'neovim-component';
 import {join, basename} from 'path';
 import {readdirSync} from 'fs';
@@ -11,6 +13,7 @@ class ComponentLoader {
     constructor() {
         this.initially_loaded = false;
         this.component_paths = [];
+        this.nyaovim_plugin_paths = [];
     }
 
     loadComponent(path: string) {
@@ -76,49 +79,40 @@ class RuntimeApi {
 
 const component_loader = new ComponentLoader();
 const bridge = window.nyaovimBridge;
-const runtime_api = new RuntimeApi({
-    'nyaovim:load-path': (html_path: string) => {
-        component_loader.loadComponent(html_path);
-    },
-    'nyaovim:load-plugin-dir': (dir_path: string) => {
-        component_loader.loadPluginDir(dir_path);
-    },
-    'nyaovim:edit-start': (file_path: string) => {
-        bridge.setRepresentedFilename(file_path);
-        bridge.addRecentDocument(file_path);
-    },
-    'nyaovim:require-script-file': (script_path: string) => {
-        require(script_path);
-    },
-    'nyaovim:call-global-function': (func_name: string, args: RPCValue[]) => {
-        const func = (window as any)[func_name];
-        if (func /*&& func is Function*/) {
-            func.apply(window, args);
-        }
-    },
-    'nyaovim:open-devtools': (mode: 'right' | 'bottom' | 'undocked' | 'detach') => {
-        bridge.openDevTools(mode);
-    },
-    'nyaovim:execute-javascript': (code: string) => {
-        if (typeof code !== 'string') {
-            console.error('nyaovim:execute-javascript: Not a string', code);
-            return;
-        }
-        try {
-            // eslint-disable-next-line no-eval
-            eval(code);
-        } catch (e) {
-            console.error('While executing javascript:', e, ' Code:', code);
-        }
-    },
-    'nyaovim:browser-window': (method: string, args: RPCValue[]) => {
-        try {
-            bridge.invokeBrowserWindowMethod(method, args);
-        } catch (e) {
-            console.error("Error while executing 'nyaovim:browser-window':", e, ' Method:', method, ' Args:', args);
-        }
-    },
-});
+
+function buildArgv(): string[] {
+    // Handle the arguments of the standalone Nyaovim.app
+    // The first argument of standalone distribution is the binary path
+    let electron_argc = 1;
+
+    const mainArgv = bridge.getArgv();
+
+    // When application is executed via 'electron' ('Electron' on darwin) executable.
+    if ('electron' === basename(mainArgv[0]).toLowerCase()) {
+        // Note:
+        // The first argument is a path to Electron executable.
+        // The second argument is the path to main.js
+        electron_argc = 2;
+    }
+
+    // Note:
+    // First and second arguments are related to Electron
+    // XXX:
+    // Spectron additionally passes many specific arguments to process and 'nvim' process
+    // will fail because of them. As a workaround, we stupidly ignore arguments on E2E tests.
+    const a = process.env.NYAOVIM_E2E_TEST_RUNNING ? [] : mainArgv.slice(electron_argc);
+
+    a.unshift(
+        '--cmd', `let\\ g:nyaovim_version="${bridge.getVersion()}"`,
+        '--cmd', `set\\ rtp+=${join(__dirname, '..', 'runtime').replace(' ', '\\ ')}`,
+    );
+
+    // XXX:
+    // Swap files are disabled because it shows message window on start up but frontend can't detect it.
+    a.unshift('-n');
+
+    return a;
+}
 
 function prepareIpc(client: Nvim) {
     bridge.onExecCommands((cmds: string[]) => {
@@ -215,61 +209,83 @@ function prepareIpc(client: Nvim) {
     });
 }
 
-class NyaoVimApp extends Polymer.Element {
-    static get is() {
-        return 'nyaovim-app';
-    }
+@customElement('nyaovim-app')
+export class NyaoVimApp extends LitElement {
+    static styles = css`
+        :host {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    `;
 
-    static get properties() {
-        return {
-            argv: {
-                type: Array,
-                value() {
+    @property({ type: Array })
+    argv: string[] = buildArgv();
 
-                    // Handle the arguments of the standalone Nyaovim.app
-                    // The first argument of standalone distribution is the binary path
-                    let electron_argc =  1;
+    editor: Neovim = null;
 
-                    const mainArgv = bridge.getArgv();
+    private runtime_api: RuntimeApi;
 
-                    // When application is executed via 'electron' ('Electron' on darwin) executable.
-                    if ('electron' === basename(mainArgv[0]).toLowerCase()) {
-                        // Note:
-                        // The first argument is a path to Electron executable.
-                        // The second argument is the path to main.js
-                        electron_argc = 2;
-                    }
-
-                    // Note:
-                    // First and second arguments are related to Electron
-                    // XXX:
-                    // Spectron additionally passes many specific arguments to process and 'nvim' process
-                    // will fail because of them.  As a workaround, we stupidly ignore arguments on E2E tests.
-                    const a = process.env.NYAOVIM_E2E_TEST_RUNNING ? [] : mainArgv.slice(electron_argc);
-
-                    a.unshift(
-                        '--cmd', `let\\ g:nyaovim_version="${bridge.getVersion()}"`,
-                        '--cmd', `set\\ rtp+=${join(__dirname, '..', 'runtime').replace(' ', '\\ ')}`,
-                    );
-
-                    // XXX:
-                    // Swap files are disabled because it shows message window on start up but frontend can't detect it.
-                    a.unshift('-n');
-
-                    return a;
-                },
+    constructor() {
+        super();
+        this.runtime_api = new RuntimeApi({
+            'nyaovim:load-path': (html_path: string) => {
+                component_loader.loadComponent(html_path);
             },
-            editor: Object,
-        };
+            'nyaovim:load-plugin-dir': (dir_path: string) => {
+                component_loader.loadPluginDir(dir_path);
+            },
+            'nyaovim:edit-start': (file_path: string) => {
+                bridge.setRepresentedFilename(file_path);
+                bridge.addRecentDocument(file_path);
+            },
+            'nyaovim:require-script-file': (script_path: string) => {
+                require(script_path);
+            },
+            'nyaovim:call-global-function': (func_name: string, args: RPCValue[]) => {
+                const func = (window as any)[func_name];
+                if (func /*&& func is Function*/) {
+                    func.apply(window, args);
+                }
+            },
+            'nyaovim:open-devtools': (mode: 'right' | 'bottom' | 'undocked' | 'detach') => {
+                bridge.openDevTools(mode);
+            },
+            'nyaovim:execute-javascript': (code: string) => {
+                if (typeof code !== 'string') {
+                    console.error('nyaovim:execute-javascript: Not a string', code);
+                    return;
+                }
+                try {
+                    // eslint-disable-next-line no-eval
+                    eval(code);
+                } catch (e) {
+                    console.error('While executing javascript:', e, ' Code:', code);
+                }
+            },
+            'nyaovim:browser-window': (method: string, args: RPCValue[]) => {
+                try {
+                    bridge.invokeBrowserWindowMethod(method, args);
+                } catch (e) {
+                    console.error("Error while executing 'nyaovim:browser-window':", e, ' Method:', method, ' Args:', args);
+                }
+            },
+        });
     }
 
-    argv: string[];
-    editor: Neovim;
+    render() {
+        return html`
+            <neovim-editor
+                id="nyaovim-editor"
+                .argv="${this.argv}"
+                font="monospace"
+            ></neovim-editor>
+        `;
+    }
 
-    ready() {
-        super.ready();
+    firstUpdated() {
         (global as any).hello = this;
-        const element = this.$['nyaovim-editor'] as NeovimElement;
+        const element = this.renderRoot.querySelector('#nyaovim-editor') as NeovimElement;
         const editor = element.editor;
         editor.on('error', (err: Error) => alert(err.message));
         editor.on('quit', () => bridge.windowClose());
@@ -289,13 +305,13 @@ class NyaoVimApp extends Polymer.Element {
                       component_loader.initially_loaded = true;
                   });
 
-            runtime_api.subscribe(client);
+            this.runtime_api.subscribe(client);
 
             element.addEventListener('drop', e => {
                 e.preventDefault();
                 const f = e.dataTransfer.files[0];
                 if (f) {
-                    client.command('edit! ' + f.path);
+                    client.command('edit! ' + (f as any).path);
                 }
             });
 
@@ -318,5 +334,3 @@ class NyaoVimApp extends Polymer.Element {
 
     // TODO: Remove all listeners when detached
 }
-
-customElements.define(NyaoVimApp.is, NyaoVimApp);

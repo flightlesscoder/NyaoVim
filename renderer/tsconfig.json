@@ -13,7 +13,10 @@
     "sourceMap": true,
     "skipLibCheck": true,
     "strictNullChecks": false,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "types": ["node"]
   },
   "files": [
     "nyaovim-app.ts",
