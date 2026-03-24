@@ -16,8 +16,7 @@
     "app": "cross-env NODE_ENV=production electron .",
     "debug": "cross-env ELECTRON_ENABLE_STACK_DUMPING=true NODE_ENV=debug electron .",
     "start": "npm-run-all dep build app",
-    "build:test": "tsc --pretty -p test/",
-    "smoke-test": "npm run build:test && mocha --exit test/smoke",
+    "smoke-test": "npx playwright test",
     "watch": "guard --watchdir main renderer test",
     "clean": "rm -rf build node_modules",
     "release": "./scripts/make-release.sh"
@@ -56,22 +55,15 @@
   "devDependencies": {
     "@electron/packager": "^19.1.0",
     "@eslint/js": "^10.0.1",
-    "@types/bluebird": "^3.5.20",
-    "@types/chai": "^4.1.3",
+    "@playwright/test": "^1.58.2",
     "@types/deep-extend": "^0.4.31",
     "@types/fbemitter": "^2.0.32",
     "@types/flux": "^3.1.7",
     "@types/mkdirp": "^0.5.2",
-    "@types/mocha": "^5.2.0",
     "@types/node": "^22.19.15",
-    "@types/q": "^1.5.0",
-    "@types/webdriverio": "^4.10.1",
-    "chai": "^4.1.2",
     "cross-env": "^5.1.4",
     "eslint": "^10.1.0",
-    "mocha": "^5.1.1",
     "npm-run-all": "^4.1.2",
-    "spectron": "^3.8.0",
     "typescript": "^6.0.2",
     "typescript-eslint": "^8.57.2"
   }
