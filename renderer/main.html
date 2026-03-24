@@ -3,6 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes" />
+    <!-- unsafe-eval required for the intentional nyaovim:execute-javascript plugin API -->
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'">
     <title>NyaoVim</title>
 
     <!-- neovim-component defines <neovim-editor>; loaded via script tag from npm -->

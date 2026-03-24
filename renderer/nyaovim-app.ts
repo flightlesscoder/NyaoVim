@@ -55,7 +55,9 @@ class RuntimeApi {
     subscribe(client: Nvim) {
         client.on('notification', this.call.bind(this));
         for (const name in this.definitions) {
-            client.subscribe(name).catch();
+            client.subscribe(name).catch((err: unknown) => {
+                console.error('Failed to subscribe to nvim event:', name, err);
+            });
         }
         this.client = client;
     }
@@ -75,6 +77,11 @@ class RuntimeApi {
         }
         return func.apply(func, args);
     }
+}
+
+// Escape characters special to Vim command-line: space, |, #, %, backslash
+function escapeVimPath(filePath: string): string {
+    return filePath.replace(/[\\ |#%]/g, '\\$&');
 }
 
 const component_loader = new ComponentLoader();
@@ -240,7 +247,16 @@ export class NyaoVimApp extends LitElement {
                 bridge.addRecentDocument(file_path);
             },
             'nyaovim:require-script-file': (script_path: string) => {
-                require(script_path);
+                if (typeof script_path !== 'string' || script_path.trim() === '') {
+                    console.error('nyaovim:require-script-file: Invalid path', script_path);
+                    return;
+                }
+                console.log('nyaovim: Loading script', script_path);
+                try {
+                    require(script_path);
+                } catch (e) {
+                    console.error('nyaovim:require-script-file: Failed to load', script_path, e);
+                }
             },
             'nyaovim:call-global-function': (func_name: string, args: RPCValue[]) => {
                 const func = (window as any)[func_name];
@@ -253,14 +269,18 @@ export class NyaoVimApp extends LitElement {
             },
             'nyaovim:execute-javascript': (code: string) => {
                 if (typeof code !== 'string') {
-                    console.error('nyaovim:execute-javascript: Not a string', code);
+                    console.error('nyaovim:execute-javascript: Expected string, got', typeof code);
+                    return;
+                }
+                if (code.length > 1_000_000) {
+                    console.error('nyaovim:execute-javascript: Code too large, refusing to eval');
                     return;
                 }
                 try {
                     // eslint-disable-next-line no-eval
-                    eval(code);
+                    eval(code);  // Intentional: plugin API design
                 } catch (e) {
-                    console.error('While executing javascript:', e, ' Code:', code);
+                    console.error('While executing javascript:', e);
                 }
             },
             'nyaovim:browser-window': (method: string, args: RPCValue[]) => {
@@ -284,7 +304,6 @@ export class NyaoVimApp extends LitElement {
     }
 
     firstUpdated() {
-        (global as any).hello = this;
         const element = this.renderRoot.querySelector('#nyaovim-editor') as NeovimElement;
         const editor = element.editor;
         editor.on('error', (err: Error) => alert(err.message));
@@ -311,12 +330,12 @@ export class NyaoVimApp extends LitElement {
                 e.preventDefault();
                 const f = e.dataTransfer?.files[0];
                 if (f) {
-                    client.command('edit! ' + (f as any).path);
+                    client.command('edit! ' + escapeVimPath((f as any).path));
                 }
             });
 
             bridge.onOpenFile((p: string) => {
-                client.command('edit! ' + p);
+                client.command('edit! ' + escapeVimPath(p));
             });
 
             prepareIpc(client);
@@ -332,5 +351,8 @@ export class NyaoVimApp extends LitElement {
         });
     }
 
-    // TODO: Remove all listeners when detached
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        this.runtime_api.unsubscribe();
+    }
 }
