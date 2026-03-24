@@ -8,7 +8,7 @@
     "noUnusedLocals": true,
     "noEmitOnError": true,
     "strictNullChecks": true,
-    "target": "es2015"
+    "target": "ES2022"
   },
   "include": [
     "**/*.ts"

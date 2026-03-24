@@ -10,7 +10,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noEmitOnError": true,
-    "target": "es2015",
+    "target": "ES2022",
     "sourceMap": true,
     "skipLibCheck": true,
     "strictNullChecks": false,

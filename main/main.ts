@@ -27,7 +27,7 @@ ${versions}
     app.exit();
 }
 
-(process as any).on('unhandledRejection', (reason: string, p: Promise<any>) => {
+process.on('unhandledRejection', (reason: unknown, p: Promise<unknown>) => {
     console.error('Fatal: Unhandled rejection at: Promise', p, 'Reason:', reason);
 });
 
