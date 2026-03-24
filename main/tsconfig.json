@@ -11,7 +11,10 @@
     "noUnusedParameters": true,
     "noEmitOnError": true,
     "target": "es2015",
-    "sourceMap": true
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false
   },
   "files": [
     "browser-config.ts",
