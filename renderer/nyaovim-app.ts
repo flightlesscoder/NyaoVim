@@ -46,7 +46,7 @@ class ComponentLoader {
 }
 
 class RuntimeApi {
-    private client: Nvim;
+    private client: Nvim | null;
 
     constructor(private readonly definitions: {[name: string]: (...args: any[]) => void}) {
         this.client = null;
@@ -175,7 +175,7 @@ function prepareIpc(client: Nvim) {
                 return undefined;
             }
 
-            let command: string;
+            let command: string | undefined;
 
             const ch = value[0];
             const code = value.charCodeAt(0);
@@ -222,7 +222,7 @@ export class NyaoVimApp extends LitElement {
     @property({ type: Array })
     argv: string[] = buildArgv();
 
-    editor: Neovim = null;
+    editor: Neovim | null = null;
 
     private runtime_api: RuntimeApi;
 
@@ -309,7 +309,7 @@ export class NyaoVimApp extends LitElement {
 
             element.addEventListener('drop', e => {
                 e.preventDefault();
-                const f = e.dataTransfer.files[0];
+                const f = e.dataTransfer?.files[0];
                 if (f) {
                     client.command('edit! ' + (f as any).path);
                 }

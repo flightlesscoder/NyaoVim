@@ -12,8 +12,8 @@ export interface BrowserConfigJson {
 }
 
 export default class BrowserConfig {
-    loaded_config: BrowserConfigJson;
-    window_state: ReturnType<typeof windowStateKeeper>;
+    loaded_config: BrowserConfigJson | null;
+    window_state: ReturnType<typeof windowStateKeeper> | null;
 
     constructor() {
         this.loaded_config = null;
@@ -67,7 +67,8 @@ export default class BrowserConfig {
     }
 
     setupWindowState(win: Electron.BrowserWindow) {
-        if (this.window_state === null) {
+        const s = this.window_state;
+        if (s === null) {
             return null;
         }
         // Note:
@@ -75,13 +76,13 @@ export default class BrowserConfig {
         // 'Object has been destroyed' error.
         // See https://github.com/rhysd/NyaoVim/pull/63
         win.on('resize', () => {
-            this.window_state.saveState(win);
+            s.saveState(win);
         });
 
-        if (this.window_state.isMaximized) {
+        if (s.isMaximized) {
             win.maximize();
         }
-        return this.window_state;
+        return s;
     }
 
     configSingletonWindow(win: Electron.BrowserWindow, lockAcquired: boolean) {

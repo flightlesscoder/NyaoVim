@@ -12,8 +12,7 @@
     "target": "ES2022",
     "sourceMap": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
-    "strictPropertyInitialization": false,
+    "strict": true,
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
     "types": ["node"]

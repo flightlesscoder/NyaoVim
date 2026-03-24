@@ -113,7 +113,7 @@ function startMainWindow() {
 
     const user_config = browser_config.applyToOptions(default_config);
 
-    let win = new BrowserWindow(user_config);
+    let win: BrowserWindow | null = new BrowserWindow(user_config);
 
     const already_exists = browser_config.configSingletonWindow(win, singleInstanceLockAcquired);
     if (already_exists) {

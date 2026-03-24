@@ -23,7 +23,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                             win.webContents.send('nyaovim:exec-commands', ['undo']);
                         } else {
                             // execute the default command
-                            webContents.getFocusedWebContents().undo();
+                            webContents.getFocusedWebContents()?.undo();
                         }
                     },
                 },
@@ -36,7 +36,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                             win.webContents.send('nyaovim:exec-commands', ['redo']);
                         } else {
                             // execute the default command
-                            webContents.getFocusedWebContents().redo();
+                            webContents.getFocusedWebContents()?.redo();
                         }
                     },
                 },
@@ -52,7 +52,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                             win.webContents.send('nyaovim:cut');
                         } else {
                             // execute the default command
-                            webContents.getFocusedWebContents().cut();
+                            webContents.getFocusedWebContents()?.cut();
                         }
                     },
                 },
@@ -65,7 +65,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                             win.webContents.send('nyaovim:copy');
                         } else {
                             // execute the default command
-                            webContents.getFocusedWebContents().copy();
+                            webContents.getFocusedWebContents()?.copy();
                         }
                     },
                 },
@@ -78,7 +78,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                             win.webContents.send('nyaovim:paste');
                         } else {
                             // execute the default command
-                            webContents.getFocusedWebContents().paste();
+                            webContents.getFocusedWebContents()?.paste();
                         }
                     },
                 },
@@ -91,7 +91,7 @@ export default function setMenu(win: Electron.BrowserWindow) {
                             win.webContents.send('nyaovim:select-all');
                         } else {
                             // execute the default command
-                            webContents.getFocusedWebContents().selectAll();
+                            webContents.getFocusedWebContents()?.selectAll();
                         }
                     },
                 },

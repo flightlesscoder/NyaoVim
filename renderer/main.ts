@@ -1,4 +1,4 @@
-if (process.env.PATH.indexOf('/usr/local/bin') === -1 && process.platform !== 'win32') {
+if (process.env.PATH && process.env.PATH.indexOf('/usr/local/bin') === -1 && process.platform !== 'win32') {
     // Note:
     // This solves the problem that $PATH is not set up when app is
     // started via clicking NyaoVim.app.
