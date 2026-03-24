@@ -13,7 +13,7 @@ export interface BrowserConfigJson {
 
 export default class BrowserConfig {
     loaded_config: BrowserConfigJson;
-    window_state: ElectronWindowState.WindowState;
+    window_state: ReturnType<typeof windowStateKeeper>;
 
     constructor() {
         this.loaded_config = null;
@@ -84,11 +84,16 @@ export default class BrowserConfig {
         return this.window_state;
     }
 
-    configSingletonWindow(win: Electron.BrowserWindow) {
+    configSingletonWindow(win: Electron.BrowserWindow, lockAcquired: boolean) {
         if (this.loaded_config === null || !this.loaded_config.single_instance) {
             return false;
         }
-        return app.makeSingleInstance((argv, cwd) => {
+        if (!lockAcquired) {
+            // Another instance already holds the lock — this is the second instance
+            return true;
+        }
+        // We're the first instance; handle subsequent launch attempts
+        app.on('second-instance', (_event, argv: string[], cwd: string) => {
             if (win.isMinimized()) {
                 win.restore();
             }
@@ -102,7 +107,7 @@ export default class BrowserConfig {
                     'args ' + args.join(' '),
                 ]);
             }
-            return true;
         });
+        return false;
     }
 }

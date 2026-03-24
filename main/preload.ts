@@ -1,4 +1,4 @@
-import {contextBridge, ipcRenderer} from 'electron';
+import {contextBridge, ipcRenderer, IpcRendererEvent} from 'electron';
 
 // Expose a typed, minimal API surface to the renderer process.
 // This replaces all electron.remote usage and is the sole communication
@@ -27,7 +27,7 @@ contextBridge.exposeInMainWorld('nyaovimBridge', {
 
     // --- IPC events forwarded from main process ---
     onExecCommands: (callback: (cmds: string[]) => void): void => {
-        ipcRenderer.on('nyaovim:exec-commands', (_event: Event, cmds: string[]) => callback(cmds));
+        ipcRenderer.on('nyaovim:exec-commands', (_event: IpcRendererEvent, cmds: string[]) => callback(cmds));
     },
     onCopy: (callback: () => void): void => {
         ipcRenderer.on('nyaovim:copy', () => callback());
@@ -42,6 +42,6 @@ contextBridge.exposeInMainWorld('nyaovimBridge', {
         ipcRenderer.on('nyaovim:select-all', () => callback());
     },
     onOpenFile: (callback: (filePath: string) => void): void => {
-        ipcRenderer.on('open-file', (_event: Event, filePath: string) => callback(filePath));
+        ipcRenderer.on('open-file', (_event: IpcRendererEvent, filePath: string) => callback(filePath));
     },
 });

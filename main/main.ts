@@ -37,10 +37,14 @@ const is_run_from_npm_package_on_darwin =
 const config_dir_name =
         process.platform !== 'darwin' ?
             app.getPath('appData') :
-            process.env.XDG_CONFIG_HOME || join(process.env.HOME, '.config');
+            process.env.XDG_CONFIG_HOME || join(process.env.HOME ?? app.getPath('home'), '.config');
 
 global.config_dir_path = join(config_dir_name, 'nyaovim');
 global.nyaovimrc_path = join(global.config_dir_path, 'nyaovimrc.html');
+
+// Request single-instance lock early (before 'ready').
+// The result is passed to BrowserConfig.configSingletonWindow().
+const singleInstanceLockAcquired = app.requestSingleInstanceLock();
 
 function exists(path: string) {
     return new Promise<boolean>(resolve => {
@@ -100,7 +104,6 @@ function startMainWindow() {
         height: 600,
         useContentSize: true,
         webPreferences: {
-            blinkFeatures: 'KeyboardEventKey,Accelerated2dCanvas,Canvas2dFixedRenderingMode',
             preload: join(__dirname, 'preload.js'),
             contextIsolation: true,
             nodeIntegration: true,
@@ -112,7 +115,7 @@ function startMainWindow() {
 
     let win = new BrowserWindow(user_config);
 
-    const already_exists = browser_config.configSingletonWindow(win);
+    const already_exists = browser_config.configSingletonWindow(win, singleInstanceLockAcquired);
     if (already_exists) {
         app.quit();
         return null;
@@ -162,17 +165,16 @@ ipcMain.on('browser-window-method', (event: Electron.IpcMainEvent, method: strin
 });
 
 app.once('window-all-closed', () => app.quit());
-app.on('open-url', (e: Event, u: string) => {
-    e.preventDefault();
+app.on('open-url', (_e, u: string) => {
     shell.openExternal(u);
 });
 app.once('will-finish-launching', function() {
     // we use once here because only the first open-file event might be missed by nyaovim-app
-    app.once('open-file', (e: Event, p: string) => {
+    app.once('open-file', (_e, p: string) => {
         // open-file event might be sent before ready event is emitted
         // put it in argv to let nyaovim-app to pick it up later
         process.argv.push(p);
-        e.preventDefault();
+        _e.preventDefault();
     });
 });
 
@@ -196,8 +198,8 @@ app.once(
                 mainWindow = w;
                 setMenu(w);
                 // Forward macOS open-file events to the renderer via IPC
-                app.on('open-file', (e: Event, p: string) => {
-                    e.preventDefault();
+                app.on('open-file', (_e, p: string) => {
+                    _e.preventDefault();
                     mainWindow?.webContents.send('open-file', p);
                 });
             }
