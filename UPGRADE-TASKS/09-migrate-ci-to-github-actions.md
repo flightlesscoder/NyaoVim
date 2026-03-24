@@ -1,4 +1,4 @@
-**Status:** pending
+**Status:** done
 
 # 09 — Migrate CI/CD from Travis CI to GitHub Actions
 
