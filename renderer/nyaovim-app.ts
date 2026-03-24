@@ -111,7 +111,7 @@ function buildArgv(): string[] {
 
     a.unshift(
         '--cmd', `let\\ g:nyaovim_version="${bridge.getVersion()}"`,
-        '--cmd', `set\\ rtp+=${join(__dirname, '..', 'runtime').replace(' ', '\\ ')}`,
+        '--cmd', `set\\ rtp+=${join(__dirname, '..', '..', 'runtime').replace(' ', '\\ ')}`,
     );
 
     // XXX:

@@ -97,7 +97,7 @@ const prepare_browser_config
         .catch(err => console.error(err));
 
 function startMainWindow() {
-    const index_html = 'file://' + join(__dirname, '..', 'renderer', 'main.html');
+    const index_html = 'file://' + join(__dirname, '..', '..', 'renderer', 'main.html');
 
     const default_config = {
         width: 800,
@@ -108,7 +108,7 @@ function startMainWindow() {
             contextIsolation: true,
             nodeIntegration: true,
         },
-        icon: nativeImage.createFromPath(join(__dirname, '..', 'resources', 'icon', 'nyaovim-logo.png')),
+        icon: nativeImage.createFromPath(join(__dirname, '..', '..', 'resources', 'icon', 'nyaovim-logo.png')),
     } as Electron.BrowserWindowConstructorOptions;
 
     const user_config = browser_config.applyToOptions(default_config);
@@ -186,7 +186,7 @@ app.once(
         if (process.platform === 'darwin' && is_run_from_npm_package_on_darwin) {
             // XXX:
             // app.dock.setIcon() is not defined in github-electron.d.ts yet.
-            (app.dock as any).setIcon(join(__dirname, '..', 'resources', 'icon', 'nyaovim-logo.png'));
+            (app.dock as any).setIcon(join(__dirname, '..', '..', 'resources', 'icon', 'nyaovim-logo.png'));
         }
 
         Promise.all([

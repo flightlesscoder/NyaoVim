@@ -4,7 +4,7 @@ import openAboutWindow from 'about-window';
 
 function startAboutWindow() {
     openAboutWindow({
-        icon_path: join(__dirname, '..', 'resources', 'icon', 'nyaovim-logo.png'),
+        icon_path: join(__dirname, '..', '..', 'resources', 'icon', 'nyaovim-logo.png'),
         copyright: 'Copyright (c) 2015 rhysd',
     });
 }

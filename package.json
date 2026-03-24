@@ -3,7 +3,7 @@
   "productName": "NyaoVim",
   "version": "0.2.0",
   "description": "Web-enhanced Extensible Neovim Frontend",
-  "main": "main/main.js",
+  "main": "out/main/main.js",
   "bin": "./bin/cli.js",
   "scripts": {
     "dep": "npm install",
@@ -18,7 +18,7 @@
     "start": "npm-run-all dep build app",
     "smoke-test": "npx playwright test",
     "watch": "guard --watchdir main renderer test",
-    "clean": "rm -rf build node_modules",
+    "clean": "rm -rf out node_modules",
     "release": "./scripts/make-release.sh"
   },
   "repository": {
